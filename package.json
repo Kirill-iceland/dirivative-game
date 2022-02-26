@@ -1,0 +1,15 @@
+{
+  "name": "dirivitive-game",
+  "version": "1.0.0",
+  "description": "A math game",
+  "main": "main.cpp",
+  "scripts": {
+    "test": "gpp"
+  },
+  "keywords": [
+    "game",
+    "dirivative"
+  ],
+  "author": "Kirill Zolotuskiy",
+  "license": "ISC"
+}

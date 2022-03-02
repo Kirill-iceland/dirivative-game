@@ -1,11 +1,11 @@
 {
   "name": "dirivative-game",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A math game",
   "main": "main.cpp",
   "scripts": {
-    "test": "g++ -o dirivitive-game.exe main.cpp",
-    "run": "dirivitive-game.exe"
+    "test": "g++ -o dirivative-game.exe main.cpp",
+    "run": "dirivative-game.exe"
   },
   "keywords": [
     "game",

@@ -1,7 +1,9 @@
 const int window_w = 150;
 const int window_h = 40;
-const int speed_mult =  2;
-const int tps = 5;
+const int speed_mult =  3;
+const int bullet_speed = 1;
+const double tps = 10;
+const double einar_speed = 50;
 int creation_speed = 7 * speed_mult;
 // int arr_pointer = 0;
 // const int arr_len = 30;
@@ -19,6 +21,7 @@ int creation_speed = 7 * speed_mult;
 // const int _O_U16TEXT = 0x20000;
 
 auto timestart = std::chrono::system_clock::now();
+auto einarstart = std::chrono::system_clock::now();
 auto timenow = std::chrono::system_clock::now();
 
 HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -75,12 +78,6 @@ einar EINAR = einar(int(window_w / 2) - 2, window_h - 1);
 bool loop(int tick){
             // int ch = std::cin.get();
     // std::wcout << ch;
-    if(GetKeyState(VK_RIGHT) & 0x8000){
-        EINAR.move(1);
-        // std::wcout << "test";
-    }else if(GetKeyState(VK_LEFT) & 0x8000){
-        EINAR.move(-1);
-    }
     if(tick % creation_speed == 0){
         // if(arr_pointer == arr_len){
         //     arr_pointer = 0;
@@ -90,16 +87,23 @@ bool loop(int tick){
         // arr_pointer++;
         // gotoxy(0,0);
         // std::wcout << arr_pointer << " " << tick;
-        start.add_next(f_of_x());
-        // gotoxy(0,0);
-        // created++;
-        // std::wcout << created << " " << tick;
+        f_of_x * new_ = new f_of_x();
+        start.add_next(new_);
 
+    }
+    if(tick % bullet_speed == 0){
+        start.move();
+        if(GetKeyState(VK_SPACE) & 0x8000){
+            bullet * new_ = new bullet(EINAR.x + 1);
+            start.add_bullet(new_);
+        }
     }
 
     if(!start.check(tick)){
         return 0;
     }
+    // gotoxy(30,0);
+    // std::wcout << tick;
     return 1;
 }
 
@@ -149,17 +153,31 @@ int main(){
 
         timenow = std::chrono::system_clock::now();
         std::chrono::duration<double> elapsed_seconds = timenow - timestart;
-        if(elapsed_seconds.count() >= 1 / tps){
+        std::chrono::duration<double> e_elapsed_seconds = timenow - einarstart;
+        if(elapsed_seconds.count() >= double(1 / tps)){
             timestart = timenow;
             if(!loop(tick)){
                 SetConsoleMode(hStdin, mode);
+                start._remove();
                 return 0;
             }
             tick++;
         }
+        if(e_elapsed_seconds.count() >= double(1 / einar_speed)){
+            einarstart = timenow;
+            if((EINAR.x < window_w - 5) && GetKeyState(VK_RIGHT) & 0x8000){
+                EINAR.move(1);
+            }else if((EINAR.x > 0) && GetKeyState(VK_LEFT) & 0x8000){
+                EINAR.move(-1);
+            }
+        }
+
+        gotoxy(0,0);
+        created++;
+        std::wcout << created << " " << tick << " " << elapsed_seconds.count();
     }
     SetConsoleMode(hStdin, mode);
-
+    start._remove();
     
     return 0;
 }

@@ -1,8 +1,7 @@
 
 int randomnum = 10000000;
 const int max_size = 6;
-int added = 0;
-int created_ = 0;
+// int created_ = 0;
 const std::wstring sup_int [10] = {L"⁰", L"", L"²", L"³", L"⁴", L"⁵", L"⁶", L"⁷", L"⁸", L"⁹"};
 
 std::string int_to_str(int n){
@@ -40,7 +39,7 @@ class f_of_x
         power_of_x new_structure [max_size];
         f_of_x* next;
         f_of_x(){
-            gotoxy(23,0);
+            // gotoxy(23,0);
             // created_++;
             // std::wcout << created_;
             // srand(time(0) + randomnum);
@@ -130,12 +129,13 @@ class f_of_x
             std::wcout << wrepeat(L" ", len);
         }
 
-        void add_next(f_of_x _next){
+        void add_next(f_of_x * _next){
             if(is_next){
                 (*next).add_next(_next);
             }else{
                 is_next = true;
-                next = &_next;
+                next = _next;
+                (*next).print();
             }
         }
 
@@ -153,26 +153,95 @@ class f_of_x
             }
             return true;
         }
+
+        void _remove(){
+            if(is_next){
+                if((*next).is_next){
+                    (*next)._remove();
+                }
+                delete next;
+            }
+        }
+};
+
+class bullet
+{
+    public:
+        int x, y;
+        bool is_next = false;
+        bullet * next;
+        bullet(int x_ = 0){
+            x = x_;
+            y = window_h - 3;
+
+        }
+
+        
+        void print(){
+            SetConsoleTextAttribute(hStdout, 0x06);
+            gotoxy(x + 1, y + 1);
+            std::wcout << L"dx";
+            gotoxy(x + 1, y + 2);
+            std::wcout << L"dy";
+            SetConsoleTextAttribute(hStdout, 0x07);
+        }
+
+        void move(){
+            if(y > 0){
+                gotoxy(x + 1, y + 2);
+                std::wcout << L"  ";
+                y--;
+            }
+            print();
+            if(is_next){
+                (*next).move();
+            }
+        }
+
+        void add_next(bullet * _next){
+            if(is_next){
+                (*next).add_next(_next);
+            }else{
+                is_next = true;
+                next = _next;
+                (*next).print();
+            }
+        }
 };
 
 class start_f
 {
     public:
         f_of_x next;
+        bullet Bullet;
         bool is_next = false;
+        bool is_bullet = false;
         start_f(){
 
         }
-        void add_next(f_of_x _next){
-            gotoxy(20,0);
-            added++;
-            std::wcout << added;
+        void add_next(f_of_x * _next){
             if(is_next){
                 next.add_next(_next);
             }else{
                 is_next = true;
-                next = _next;
+                next = (*_next);
             }
+        }
+
+        void add_bullet(bullet * _next){
+            if(is_bullet){
+                Bullet.add_next(_next);
+            }else{
+                is_bullet = true;
+                Bullet = (*_next);
+            }
+        }
+
+        void move(){
+            if(is_bullet){
+                return Bullet.move();
+            }
+            return;
         }
 
         bool check(int tick){
@@ -180,6 +249,14 @@ class start_f
                 return next.check(tick);
             }
             return true;
+        }
+
+        void _remove(){
+            if(is_next){
+                next._remove();
+            }
+            delete &next;
+            return;
         }
 };
 
@@ -206,7 +283,7 @@ class einar
                 std::wcout << wrepeat(L" ", x_);
                 std::wcout << L"EINAR";
             }else{
-                gotoxy(x + 1 - x_, y + 1);
+                gotoxy(x + 1 + x_, y + 1);
                 std::wcout << L"EINAR";
                 std::wcout << wrepeat(L" ", 0 - x_);
             }

@@ -1,6 +1,6 @@
 {
   "name": "dirivative-game",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A math game",
   "main": "main.cpp",
   "scripts": {

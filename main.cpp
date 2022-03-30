@@ -1,12 +1,14 @@
 const int window_w = 150;                   // in chars
 const int window_h = 40;                    // in chars
 const int speed_mult =  3;                  // more -> slower 
+const double tps = 10;                      // ticks per second
 const int bullet_speed = 1;                 // more -> slower (bullets per tick)
-const double tps = 10;                      // ticks per second 
+const int bullet_creation_delay = tps / 2;  // more -> slower (bullets per tick) 
+int bullet_creation_delay_count = 0;        // more -> slower (bullets per tick) 
 const double einar_speed = 50;              // ticks per second (of click input)
-int creation_speed = 7 * speed_mult;        // more -> slower (cretions per tick)
+int creation_speed = 3 * 7 * speed_mult;        // more -> slower (cretions per tick)
 int score = 0;                              // -
-int single_click_delay = einar_speed / 10;   // more -> longer
+int single_click_delay = einar_speed / 10;  // more -> longer
 int click_delay = 0;                        // -
 // int arr_pointer = 0;
 // const int arr_len = 30;
@@ -23,6 +25,7 @@ int click_delay = 0;                        // -
 #include <time.h>
 // const int _O_U16TEXT = 0x20000;
 
+const std::wstring end_string = L"YOU LOST";
 const std::wstring einar_string = L"EINAR";
 const int einar_width = einar_string.length();
 
@@ -100,11 +103,17 @@ bool loop(int tick){
         start.add_next(new_);
 
     }
+    
     if(tick % bullet_speed == 0){
         bullet_move_(start);
         if(GetKeyState(VK_SPACE) & 0x8000){
-            bullet * new__ = new bullet(EINAR.x + int(einar_width / 2) - 1);
-            start.add_bullet(new__);
+            if(bullet_creation_delay_count % bullet_creation_delay == 0){
+                bullet * new__ = new bullet(EINAR.x + int(einar_width / 2) - 1);
+                start.add_bullet(new__);
+            }
+            bullet_creation_delay_count++;
+        }else{
+            bullet_creation_delay_count = 0;
         }
     }
 
@@ -115,6 +124,18 @@ bool loop(int tick){
     // std::wcout << tick;
     return 1;
 }
+
+void end(DWORD mode){
+    start._remove();
+    gotoxy(window_w / 2 - end_string.length() / 2, window_h / 2);
+    SetConsoleTextAttribute(hStdout, 0x0c);
+    std::wcout << end_string;
+    gotoxy(window_w / 2 - end_string.length() / 2, window_h / 2 + 2);
+    SetConsoleTextAttribute(hStdout, 0x07);
+    system("pause");
+    SetConsoleMode(hStdin, mode);
+}
+
 
 int main(){
     // Setup
@@ -169,10 +190,7 @@ int main(){
         if(elapsed_seconds.count() >= double(1 / tps)){
             timestart = timenow;
             if(!loop(tick)){
-                SetConsoleMode(hStdin, mode);
-                start._remove();
-                int a;
-                std::wcin >> a;
+                end(mode);
                 return 0;
             }
             tick++;
@@ -201,8 +219,6 @@ int main(){
         // created++;
         // std::wcout << created << " " << tick << " " << elapsed_seconds.count();
     }
-    SetConsoleMode(hStdin, mode);
-    start._remove();
-    
+    end(mode);
     return 0;
 }

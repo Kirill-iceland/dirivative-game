@@ -1,6 +1,7 @@
 
 int randomnum = 10000000;
 const int max_size = 6;
+int margin = 3;
 int ccccccc = 0;
 // int created_ = 0;
 const std::wstring sup_int [10] = {L"⁰", L"", L"²", L"³", L"⁴", L"⁵", L"⁶", L"⁷", L"⁸", L"⁹"};
@@ -39,7 +40,7 @@ class bullet
         bullet * next;
         bullet(int x_ = 0){
             x = x_;
-            y = window_h - 7;
+            y = window_h - 3;
 
         }
 
@@ -65,13 +66,15 @@ class bullet
             }
         }
 
-        void remove_next(){
+        void remove_bullet(){
             if((*next).is_next){
+                bullet * temp =  next;
                 next = (*next).next;
+                delete temp;
             }else{
+                delete next;
                 is_next = false;
             }
-            delete next;
         }
 
         void remove(){
@@ -116,7 +119,7 @@ class f_of_x
 
             text = to_String();
             len = text.length();
-            x = rand() % (window_w - len);
+            x = (rand() % (window_w - len - margin * 2)) + margin;
             y = 0;
             speed = size * speed_mult;
         }
@@ -208,11 +211,11 @@ class f_of_x
         }
 
         template <typename par>
-        bool bullet_check(bullet bullet_, par parrent){
-            if(y == bullet_.y - 1){
+        bool bullet_check(bullet & bullet_, par & parrent){ 
+            if(y == bullet_.y - 1 || y == bullet_.y){
                 if(x <= bullet_.x + 1 && x + len > bullet_.x){
                     bullet_.remove();
-                    parrent.remove_next();
+                    parrent.remove_bullet();
                     score++;
                     remove();
                     dirivative();
@@ -242,7 +245,7 @@ class f_of_x
 class start_f
 {
     public:
-        f_of_x next;
+        f_of_x * next;
         bullet * Bullet;
         bool is_next = false;
         bool is_bullet = false;
@@ -251,10 +254,10 @@ class start_f
         }
         void add_next(f_of_x * _next){
             if(is_next){
-                next.add_next(_next);
+                (*next).add_next(_next);
             }else{
                 is_next = true;
-                next = (*_next);
+                next = _next;
             }
         }
 
@@ -269,48 +272,61 @@ class start_f
 
         bool check(int tick){
             if(is_next){
-                return next.check(tick);
+                return (*next).check(tick);
             }
             return true;
         }
         
-        bool bullet_check(bullet bullet_, bullet parrent){
+        bool bullet_check(bullet & bullet_, bullet & parrent){
             if(is_next){
-                return next.bullet_check(bullet_, parrent);
+                return (*next).bullet_check(bullet_, parrent);
             }
             return false;
         }
 
-        bool bullet_check(bullet bullet_, start_f parrent){
+        bool bullet_check(bullet & bullet_, start_f & parrent){
             if(is_next){
-                return next.bullet_check(bullet_, parrent);
+                return (*next).bullet_check(bullet_, parrent);
             }
             return false;
         }
 
         void remove_next(){
-            if(next.is_next){
-                next = *(next.next);
+            if((*next).is_next){
+                f_of_x * temp =  next;
+                next = (*next).next;
+                delete temp;
             }else{
                 is_next = false;
+                delete next;
             }
-            delete &next;
+        }
+        
+        void remove_bullet(){
+            if((*Bullet).is_next){
+                bullet * temp =  Bullet;
+                Bullet = (*Bullet).next;
+                delete temp;
+            }else{
+                delete Bullet;
+                is_bullet = false;
+            }
         }
 
         void _remove(){
             if(is_next){
-                next._remove();
+                (*next)._remove();
             }
-            delete &next;
+            delete next;
             return;
         }
 };
 
 
-void bullet_move(start_f s, bullet & main, bullet & parrent){
+void bullet_move(start_f & s, bullet & main, bullet & parrent){
     if(s.bullet_check(main, parrent)){
-        if(main.is_next){
-            bullet_move(s, *(main.next), main);
+        if(parrent.is_next){
+            bullet_move(s, *(parrent.next), parrent);
         }
         return;
     }
@@ -318,17 +334,17 @@ void bullet_move(start_f s, bullet & main, bullet & parrent){
         gotoxy(main.x + 1, main.y + 2);
         std::wcout << L"  ";
         main.y--;
+        main.print();
     }
-    main.print();
     if(main.is_next){ 
         bullet_move(s, (*(main.next)), main);
     }
         
 }
-void bullet_move(start_f s, bullet & main, start_f parrent){
+void bullet_move(start_f & s, bullet & main, start_f & parrent){
     if(s.bullet_check(main, parrent)){
-        if(main.is_next){
-            bullet_move(s, *(main.next), main);
+        if(parrent.is_bullet){
+            bullet_move(s, *(parrent.Bullet), parrent);
         }
         return;
     }
@@ -336,14 +352,20 @@ void bullet_move(start_f s, bullet & main, start_f parrent){
         gotoxy(main.x + 1, main.y + 2);
         std::wcout << L"  ";
         main.y--;
-    }
-    main.print();
-    if(main.is_next){
-        bullet_move(s, *(main.next), main);
+        main.print();
+        if(main.is_next){
+            bullet_move(s, *(main.next), main);
+        }
+    }else{
+        main.remove();
+        parrent.remove_bullet();
+        if(parrent.is_bullet){
+            bullet_move(s, *(parrent.Bullet), main);
+        }
     }
 }
 
-void bullet_move_(start_f main){
+void bullet_move_(start_f & main){
     if(main.is_bullet){
         return bullet_move(main, *(main.Bullet), main);
     }

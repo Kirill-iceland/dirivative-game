@@ -1,6 +1,7 @@
 
 int randomnum = 10000000;
 const int max_size = 6;
+int ccccccc = 0;
 // int created_ = 0;
 const std::wstring sup_int [10] = {L"⁰", L"", L"²", L"³", L"⁴", L"⁵", L"⁶", L"⁷", L"⁸", L"⁹"};
 
@@ -26,6 +27,58 @@ class power_of_x
         power_of_x(int p = 0, int m = 0){
             pow = p;
             mult = m;
+        }
+};
+
+
+class bullet
+{
+    public:
+        int x, y;
+        bool is_next = false;
+        bullet * next;
+        bullet(int x_ = 0){
+            x = x_;
+            y = window_h - 7;
+
+        }
+
+        
+        void print(){
+            SetConsoleTextAttribute(hStdout, 0x06);
+            gotoxy(x + 1, y + 1);
+            std::wcout << L"dy";
+            gotoxy(x + 1, y + 2);
+            std::wcout << L"dx";
+            SetConsoleTextAttribute(hStdout, 0x07);
+        }
+
+
+
+        void add_next(bullet * _next){
+            if(is_next){
+                (*next).add_next(_next);
+            }else{
+                is_next = true;
+                next = _next;
+                (*next).print();
+            }
+        }
+
+        void remove_next(){
+            if((*next).is_next){
+                next = (*next).next;
+            }else{
+                is_next = false;
+            }
+            delete next;
+        }
+
+        void remove(){
+            gotoxy(x + 1, y + 1);
+            std::wcout << L"  ";
+            gotoxy(x + 1, y + 2);
+            std::wcout << L"  ";
         }
 };
 
@@ -154,6 +207,26 @@ class f_of_x
             return true;
         }
 
+        template <typename par>
+        bool bullet_check(bullet bullet_, par parrent){
+            if(y == bullet_.y - 1){
+                if(x <= bullet_.x + 1 && x + len > bullet_.x){
+                    bullet_.remove();
+                    parrent.remove_next();
+                    score++;
+                    remove();
+                    dirivative();
+                    print();
+                    return true;
+                }
+            }
+            if(is_next){
+                return (*next).bullet_check(bullet_, parrent);
+            }else{
+                return false;
+            }
+        }
+
         void _remove(){
             if(is_next){
                 if((*next).is_next){
@@ -164,56 +237,13 @@ class f_of_x
         }
 };
 
-class bullet
-{
-    public:
-        int x, y;
-        bool is_next = false;
-        bullet * next;
-        bullet(int x_ = 0){
-            x = x_;
-            y = window_h - 3;
 
-        }
-
-        
-        void print(){
-            SetConsoleTextAttribute(hStdout, 0x06);
-            gotoxy(x + 1, y + 1);
-            std::wcout << L"dx";
-            gotoxy(x + 1, y + 2);
-            std::wcout << L"dy";
-            SetConsoleTextAttribute(hStdout, 0x07);
-        }
-
-        void move(){
-            if(y > 0){
-                gotoxy(x + 1, y + 2);
-                std::wcout << L"  ";
-                y--;
-            }
-            print();
-            if(is_next){
-                (*next).move();
-            }
-        }
-
-        void add_next(bullet * _next){
-            if(is_next){
-                (*next).add_next(_next);
-            }else{
-                is_next = true;
-                next = _next;
-                (*next).print();
-            }
-        }
-};
 
 class start_f
 {
     public:
         f_of_x next;
-        bullet Bullet;
+        bullet * Bullet;
         bool is_next = false;
         bool is_bullet = false;
         start_f(){
@@ -230,18 +260,11 @@ class start_f
 
         void add_bullet(bullet * _next){
             if(is_bullet){
-                Bullet.add_next(_next);
+                (*Bullet).add_next(_next);
             }else{
                 is_bullet = true;
-                Bullet = (*_next);
+                Bullet = _next;
             }
-        }
-
-        void move(){
-            if(is_bullet){
-                return Bullet.move();
-            }
-            return;
         }
 
         bool check(int tick){
@@ -249,6 +272,29 @@ class start_f
                 return next.check(tick);
             }
             return true;
+        }
+        
+        bool bullet_check(bullet bullet_, bullet parrent){
+            if(is_next){
+                return next.bullet_check(bullet_, parrent);
+            }
+            return false;
+        }
+
+        bool bullet_check(bullet bullet_, start_f parrent){
+            if(is_next){
+                return next.bullet_check(bullet_, parrent);
+            }
+            return false;
+        }
+
+        void remove_next(){
+            if(next.is_next){
+                next = *(next.next);
+            }else{
+                is_next = false;
+            }
+            delete &next;
         }
 
         void _remove(){
@@ -259,6 +305,55 @@ class start_f
             return;
         }
 };
+
+
+void bullet_move(start_f s, bullet & main, bullet & parrent){
+    if(s.bullet_check(main, parrent)){
+        if(main.is_next){
+            bullet_move(s, *(main.next), main);
+        }
+        return;
+    }
+    if(main.y > 0){
+        gotoxy(main.x + 1, main.y + 2);
+        std::wcout << L"  ";
+        main.y--;
+    }
+    main.print();
+    if(main.is_next){ 
+        bullet_move(s, (*(main.next)), main);
+    }
+        
+}
+void bullet_move(start_f s, bullet & main, start_f parrent){
+    if(s.bullet_check(main, parrent)){
+        if(main.is_next){
+            bullet_move(s, *(main.next), main);
+        }
+        return;
+    }
+    if(main.y > 0){
+        gotoxy(main.x + 1, main.y + 2);
+        std::wcout << L"  ";
+        main.y--;
+    }
+    main.print();
+    if(main.is_next){
+        bullet_move(s, *(main.next), main);
+    }
+}
+
+void bullet_move_(start_f main){
+    if(main.is_bullet){
+        return bullet_move(main, *(main.Bullet), main);
+    }
+    return;
+}
+
+
+
+
+
 
 class einar
 {
@@ -272,7 +367,7 @@ class einar
         void print(){
             SetConsoleTextAttribute(hStdout, 0x0e);
             gotoxy(x + 1, y + 1);
-            std::wcout << L"EINAR";
+            std::wcout << einar_string;
             SetConsoleTextAttribute(hStdout, 0x07);
         }
 
@@ -281,10 +376,10 @@ class einar
             if(x_ > 0){
                 gotoxy(x + 1, y + 1);
                 std::wcout << wrepeat(L" ", x_);
-                std::wcout << L"EINAR";
+                std::wcout << einar_string;
             }else{
                 gotoxy(x + 1 + x_, y + 1);
-                std::wcout << L"EINAR";
+                std::wcout << einar_string;
                 std::wcout << wrepeat(L" ", 0 - x_);
             }
             SetConsoleTextAttribute(hStdout, 0x07);

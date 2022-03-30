@@ -1,10 +1,13 @@
-const int window_w = 150;
-const int window_h = 40;
-const int speed_mult =  3;
-const int bullet_speed = 1;
-const double tps = 10;
-const double einar_speed = 50;
-int creation_speed = 7 * speed_mult;
+const int window_w = 150;                   // in chars
+const int window_h = 40;                    // in chars
+const int speed_mult =  3;                  // more -> slower 
+const int bullet_speed = 1;                 // more -> slower (bullets per tick)
+const double tps = 10;                      // ticks per second 
+const double einar_speed = 50;              // ticks per second (of click input)
+int creation_speed = 7 * speed_mult;        // more -> slower (cretions per tick)
+int score = 0;                              // -
+int single_click_delay = einar_speed / 10;   // more -> longer
+int click_delay = 0;                        // -
 // int arr_pointer = 0;
 // const int arr_len = 30;
 
@@ -19,6 +22,9 @@ int creation_speed = 7 * speed_mult;
 #include <windows.h>
 #include <time.h>
 // const int _O_U16TEXT = 0x20000;
+
+const std::wstring einar_string = L"EINAR";
+const int einar_width = einar_string.length();
 
 auto timestart = std::chrono::system_clock::now();
 auto einarstart = std::chrono::system_clock::now();
@@ -68,6 +74,9 @@ void print_grid(){
     std::wcout << L"└";
     std::wcout << wrepeat(L"─", window_w);
     std::wcout << L"┘\n";
+
+    gotoxy(0,0);
+    std::wcout << L"score: ";
     
 }
 
@@ -92,10 +101,10 @@ bool loop(int tick){
 
     }
     if(tick % bullet_speed == 0){
-        start.move();
+        bullet_move_(start);
         if(GetKeyState(VK_SPACE) & 0x8000){
-            bullet * new_ = new bullet(EINAR.x + 1);
-            start.add_bullet(new_);
+            bullet * new__ = new bullet(EINAR.x + int(einar_width / 2) - 1);
+            start.add_bullet(new__);
         }
     }
 
@@ -109,7 +118,10 @@ bool loop(int tick){
 
 int main(){
     // Setup
-	HWND consoleWindow = GetConsoleWindow();
+	HWND consoleWindow = GetConsoleWindow();  
+    RECT r;
+    GetWindowRect(consoleWindow, &r);
+    MoveWindow(consoleWindow, r.left, r.top, 1150, 720, TRUE);
 	// SetWindowPos( consoleWindow, 0, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER );
     CONSOLE_CURSOR_INFO cursor;
     cursor.bVisible = 0;
@@ -159,6 +171,8 @@ int main(){
             if(!loop(tick)){
                 SetConsoleMode(hStdin, mode);
                 start._remove();
+                int a;
+                std::wcin >> a;
                 return 0;
             }
             tick++;
@@ -166,15 +180,26 @@ int main(){
         if(e_elapsed_seconds.count() >= double(1 / einar_speed)){
             einarstart = timenow;
             if((EINAR.x < window_w - 5) && GetKeyState(VK_RIGHT) & 0x8000){
-                EINAR.move(1);
+                if(click_delay == 0 || click_delay >= single_click_delay){
+                    EINAR.move(1);
+                }
+                click_delay++;
             }else if((EINAR.x > 0) && GetKeyState(VK_LEFT) & 0x8000){
-                EINAR.move(-1);
+                if(click_delay == 0 || click_delay >= single_click_delay){
+                    EINAR.move(-1);
+                }
+                click_delay++;
+            }else if(click_delay != 0){
+                click_delay = 0;
             }
         }
 
-        gotoxy(0,0);
-        created++;
-        std::wcout << created << " " << tick << " " << elapsed_seconds.count();
+        gotoxy(7,0);
+        SetConsoleTextAttribute(hStdout, 0x0e);
+        std::wcout << score;
+        SetConsoleTextAttribute(hStdout, 0x07);
+        // created++;
+        // std::wcout << created << " " << tick << " " << elapsed_seconds.count();
     }
     SetConsoleMode(hStdin, mode);
     start._remove();

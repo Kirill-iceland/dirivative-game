@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "iostream": "cpp",
+        "charconv": "cpp",
+        "random": "cpp",
+        "chrono": "cpp",
+        "iosfwd": "cpp",
+        "iterator": "cpp",
+        "xlocmon": "cpp",
+        "xlocnum": "cpp",
+        "xloctime": "cpp"
+    }
+}

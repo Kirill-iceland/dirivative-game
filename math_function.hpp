@@ -198,8 +198,10 @@ class f_of_x
             }
         }
 
-        bool check(int tick){
-            if(tick % speed == 0){
+        
+        template <typename _start_>
+        bool check(int tick, _start_ * start_){
+            if(tick % speed == 0 && !(*start_).next_check(*this)){
                 if(y == window_h - 1){
                     return false;
                 }
@@ -208,9 +210,22 @@ class f_of_x
                 print();
             }
             if(is_next){
-                return (*next).check(tick);
+                return (*next).check(tick, start_);
             }
             return true;
+        }
+
+        bool next_check(f_of_x & next_){ 
+            if(y == next_.y + 1){
+                if(x < next_.x + next_.len && x + len > next_.x){
+                    return true;
+                }
+            }
+            if(is_next){
+                return (*next).next_check(next_);
+            }else{
+                return false;
+            }
         }
 
         template <typename par, typename par2>
@@ -296,11 +311,18 @@ class start_f
 
         bool check(int tick){
             if(is_next){
-                return (*next).check(tick);
+                return (*next).check(tick, this);
             }
             return true;
         }
         
+        bool next_check(f_of_x & next_){
+            if(is_next){
+                return (*next).next_check(next_);
+            }
+            return false;
+        }
+
         bool bullet_check(bullet & bullet_, bullet & parrent){
             if(is_next){
                 return (*next).bullet_check(bullet_, parrent, this);

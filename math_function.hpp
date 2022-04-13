@@ -157,10 +157,12 @@ class f_of_x
             return res;
         }
 
-        power_of_x * dirivative(){
+        template <typename par2>
+        bool dirivative(par2 * parrent){
             if(size < 2){
                 size = 0;
-                return {};
+                (*parrent).remove_next();
+                return false;
             }else{
                 size--;
                 for (int i = size; i > 0; i--)
@@ -171,7 +173,8 @@ class f_of_x
                 structure[0] = new_structure[0];
                 text = to_String();
                 len = text.length();
-                return structure;
+                speed = size * speed_mult;
+                return true;
             }
         }
 
@@ -210,23 +213,44 @@ class f_of_x
             return true;
         }
 
-        template <typename par>
-        bool bullet_check(bullet & bullet_, par & parrent){ 
+        template <typename par, typename par2>
+        bool bullet_check(bullet & bullet_, par & parrent, par2 * f_parrent){ 
             if(y == bullet_.y - 1 || y == bullet_.y){
                 if(x <= bullet_.x + 1 && x + len > bullet_.x){
                     bullet_.remove();
                     parrent.remove_bullet();
                     score++;
+                    if(score%15 == 0){
+                        if(difficulty > 1){
+                            difficulty--;
+                            creation_speed = difficulty * 7 * speed_mult;
+                        }else if(speed_mult > 1){
+                            speed_mult--;
+                            creation_speed = difficulty * 7 * speed_mult;
+                        }
+                    }
                     remove();
-                    dirivative();
-                    print();
+                    if(dirivative(f_parrent)){
+                        print();
+                    }
                     return true;
                 }
             }
             if(is_next){
-                return (*next).bullet_check(bullet_, parrent);
+                return (*next).bullet_check(bullet_, parrent, this);
             }else{
                 return false;
+            }
+        }
+
+        void remove_next(){
+            if((*next).is_next){
+                f_of_x * temp =  next;
+                next = (*next).next;
+                delete temp;
+            }else{
+                is_next = false;
+                delete next;
             }
         }
 
@@ -279,14 +303,14 @@ class start_f
         
         bool bullet_check(bullet & bullet_, bullet & parrent){
             if(is_next){
-                return (*next).bullet_check(bullet_, parrent);
+                return (*next).bullet_check(bullet_, parrent, this);
             }
             return false;
         }
 
         bool bullet_check(bullet & bullet_, start_f & parrent){
             if(is_next){
-                return (*next).bullet_check(bullet_, parrent);
+                return (*next).bullet_check(bullet_, parrent, this);
             }
             return false;
         }

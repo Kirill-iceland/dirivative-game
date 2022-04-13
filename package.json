@@ -4,7 +4,7 @@
   "description": "A math game",
   "main": "main.cpp",
   "scripts": {
-    "test": "g++ -o dirivative-game.exe main.cpp",
+    "test": "g++ -o dirivative-game.exe main.cpp sha1.cpp",
     "run": "dirivative-game.exe"
   },
   "keywords": [

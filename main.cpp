@@ -1,19 +1,22 @@
-const int window_w = 150;                   // in chars
-const int window_h = 40;                    // in chars
-const int speed_mult =  3;                  // more -> slower 
-const double tps = 10;                      // ticks per second
-const int bullet_speed = 1;                 // more -> slower (bullets per tick)
-const int bullet_creation_delay = tps / 2;  // more -> slower (bullets per tick) 
-int bullet_creation_delay_count = 0;        // more -> slower (bullets per tick) 
-const double einar_speed = 50;              // ticks per second (of click input)
-int creation_speed = 3 * 7 * speed_mult;        // more -> slower (cretions per tick)
-int score = 0;                              // -
-int single_click_delay = einar_speed / 10;  // more -> longer
-int click_delay = 0;                        // -
+const int window_w = 150;                           // in chars
+const int window_h = 40;                            // in chars
+int speed_mult =  3;                                // more -> slower 
+const double tps = 10;                              // ticks per second
+const int bullet_speed = 1;                         // more -> slower (bullets per tick)
+const int bullet_creation_delay = tps / 2;          // more -> slower (bullets per tick) 
+int bullet_creation_delay_count = 0;                // more -> slower (bullets per tick) 
+const double einar_speed = 50;                      // ticks per second (of click input)
+int difficulty = 3;                                 // more -> esear
+int creation_speed = difficulty * 7 * speed_mult;   // more -> slower (cretions per tick)
+int score = 0;                                      // -
+int single_click_delay = einar_speed / 10;          // more -> longer
+int click_delay = 0;                                // -
 // int arr_pointer = 0;
 // const int arr_len = 30;
 
 #include <iostream>
+#include <fstream>
+#include <cstdio>
 #include <io.h>
 #include <fcntl.h>
 #include <string>
@@ -23,10 +26,14 @@ int click_delay = 0;                        // -
 #include <conio.h>
 #include <windows.h>
 #include <time.h>
+#include <math.h>
+#include "sha1.h"
 // const int _O_U16TEXT = 0x20000;
 
 const std::wstring end_string = L"YOU LOST";
 const std::wstring einar_string = L"EINAR";
+const std::string secret_hash = "the best text.#$%^@#$";
+std::string errrrrrrrrr = "main";
 const int einar_width = einar_string.length();
 
 auto timestart = std::chrono::system_clock::now();
@@ -35,6 +42,12 @@ auto timenow = std::chrono::system_clock::now();
 
 HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+
+DWORD mode;
+
+std::ifstream highscore_file("dirivative-game.txt");
+int highscore;
+std::string highscore_hash;
 
 void gotoxy(int x, int y){
     COORD coord;
@@ -56,6 +69,23 @@ std::wstring wrepeat(std::wstring str, int n){
 // f_of_x f_arr [arr_len] = {};
 
 
+const int MR_legth  = 59;
+const int MR_height = 13;
+const std::wstring MR [MR_height] = {
+    L"                             |                             ",
+    L"                             |                             ",
+    L"                             |                             ",
+    L"  _____________________------|------_____________________  ",
+    L" /###################/ _     _     _ \\###################\\ ",
+    L"/###################| |_|   |_|   |_| |###################\\",
+    L".----_-----_-----_--+  _     _     _  +--_-----_-----_----.",
+    L"|   | |   | |   | |   | |   | |   | |   | |   | |   | |   |",
+    L"|   |_|   |_|   |_|   |_|   |_|   |_|   |_|   |_|   |_|   |",
+    L"|    _     _     _     _    ___    _     _     _     _    |",
+    L"|   | |   | |   | |   | |  |   |  | |   | |   | |   | |   |",
+    L"|   |_|   |_|   |_|   |_|  |   |  |_|   |_|   |_|   |_|   |",
+    L"+--------------------------|___|--------------------------+"
+};
 
 
 
@@ -68,18 +98,41 @@ void print_grid(){
     std::wstring middle = L"│";
     middle = middle + wrepeat(L" ", window_w);
     middle = middle + L"│\n";
-    for (int i = 0; i < window_h; i++)
-    {
+    std::wstring middle_l = L"│" + wrepeat(L" ", (window_w - MR_legth) / 2);
+    std::wstring middle_r = wrepeat(L" ", window_w - MR_legth - (window_w - MR_legth) / 2) + L"│\n";
+    const int padding_top = (window_h - MR_height) / 2;
+    const int padding_botttum = window_h - MR_height - (window_h - MR_height) / 2;
+
+    for (int i = 0; i < padding_top; i++){
         std::wcout << middle;
     }
-
+    for (int i = 0; i < MR_height; i++){
+        std::wcout <<  middle_l + MR[i] + middle_r;
+    }
+    for (int i = 0; i < padding_botttum; i++){
+        std::wcout << middle;
+    }
     
     std::wcout << L"└";
     std::wcout << wrepeat(L"─", window_w);
     std::wcout << L"┘\n";
 
-    gotoxy(0,0);
-    std::wcout << L"score: ";
+    gotoxy(1,0);
+    std::wcout << L"score: ";    
+    if(highscore == 0){
+        gotoxy(window_w - 11, 0);
+    }else{
+        gotoxy(window_w - int(log10(highscore)) - 11, 0);
+    }
+    std::wcout << L"highscore: ";
+    SetConsoleTextAttribute(hStdout, 0x0e);
+    std::wcout << highscore;
+    SetConsoleTextAttribute(hStdout, 0x07);
+
+    gotoxy(0, padding_top +1);
+    for (int i = 0; i < MR_height; i++){
+        std::wcout <<  middle;
+    }
     
 }
 
@@ -91,6 +144,7 @@ bool loop(int tick){
             // int ch = std::cin.get();
     // std::wcout << ch;
     if(tick % creation_speed == 0){
+        errrrrrrrrr = "creation of next";
         // if(arr_pointer == arr_len){
         //     arr_pointer = 0;
         // }
@@ -105,9 +159,11 @@ bool loop(int tick){
     }
     
     if(tick % bullet_speed == 0){
+        errrrrrrrrr = "bullet move";
         bullet_move_(start);
         if(GetKeyState(VK_SPACE) & 0x8000){
             if(bullet_creation_delay_count % bullet_creation_delay == 0){
+                errrrrrrrrr = "creation of bullet";
                 bullet * new__ = new bullet(EINAR.x + int(einar_width / 2) - 1);
                 start.add_bullet(new__);
             }
@@ -116,7 +172,8 @@ bool loop(int tick){
             bullet_creation_delay_count = 0;
         }
     }
-
+    
+    errrrrrrrrr = "check";
     if(!start.check(tick)){
         return 0;
     }
@@ -126,6 +183,11 @@ bool loop(int tick){
 }
 
 void end(DWORD mode){
+    if(highscore < score){
+        std::ofstream highscore_file1("dirivative-game.txt");
+        highscore_file1 << sha1(secret_hash + std::to_string(score));
+        highscore_file1.close();
+    }
     start._remove();
     gotoxy(window_w / 2 - end_string.length() / 2, window_h / 2);
     SetConsoleTextAttribute(hStdout, 0x0c);
@@ -136,9 +198,11 @@ void end(DWORD mode){
     SetConsoleMode(hStdin, mode);
 }
 
-
 int main(){
+try{
     // Setup
+    freopen("error.txt", "w", stderr);
+
 	HWND consoleWindow = GetConsoleWindow();  
     RECT r;
     GetWindowRect(consoleWindow, &r);
@@ -150,7 +214,6 @@ int main(){
     SetConsoleCursorInfo(hStdout, &cursor);
     _setmode(_fileno(stdout), 0x20000);
 
-    DWORD mode;
     GetConsoleMode(hStdin, &mode);
     SetConsoleMode(hStdin, ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT);
     srand(time(0));
@@ -159,10 +222,30 @@ int main(){
     SetConsoleTitle(TEXT("Dirivative Game"));
     // system("mode 650");
     system("cls");
+
     
     // f_of_x f = f_of_x();
+  
+    std::getline(highscore_file, highscore_hash);
+    if(highscore_hash == ""){
+        highscore = 0;
+    }else{
+        bool done = false;
+        int i = 0;
+        while(!done){
+            if(sha1(secret_hash + std::to_string(i)) == highscore_hash){
+                highscore = i;
+                done = true;
+            }
+            i++;
+        }
+    }
+    highscore_file.close();
 
     print_grid();
+
+
+
     // f.print();
     
     // std::wcout << f.size << std::endl;
@@ -188,6 +271,7 @@ int main(){
         std::chrono::duration<double> elapsed_seconds = timenow - timestart;
         std::chrono::duration<double> e_elapsed_seconds = timenow - einarstart;
         if(elapsed_seconds.count() >= double(1 / tps)){
+            errrrrrrrrr = "loop";
             timestart = timenow;
             if(!loop(tick)){
                 end(mode);
@@ -196,6 +280,7 @@ int main(){
             tick++;
         }
         if(e_elapsed_seconds.count() >= double(1 / einar_speed)){
+            errrrrrrrrr = "einar";
             einarstart = timenow;
             if((EINAR.x < window_w - 5) && GetKeyState(VK_RIGHT) & 0x8000){
                 if(click_delay == 0 || click_delay >= single_click_delay){
@@ -212,7 +297,7 @@ int main(){
             }
         }
 
-        gotoxy(7,0);
+        gotoxy(8,0);
         SetConsoleTextAttribute(hStdout, 0x0e);
         std::wcout << score;
         SetConsoleTextAttribute(hStdout, 0x07);
@@ -221,4 +306,17 @@ int main(){
     }
     end(mode);
     return 0;
+}
+catch(int err){
+    end(mode);
+    std::wcout << err;
+}
+catch(char * err){
+    end(mode);
+    std::wcout << err;
+}
+catch(...){
+    std::cerr << errrrrrrrrr;
+    end(mode);
+}
 }
